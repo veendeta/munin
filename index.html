@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MUNIN — Under Construction</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Syncopate:wght@700&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        :root {
+            --bg-black: #030305;
+            --deep-blue: #0A122C;
+            --accent-blue: #1A365D;
+            --text-white: #FFFFFF;
+            --text-muted: #8A99AD;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-black);
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--text-white);
+        }
+
+        /* Canvas 3D Background */
+        #webgl-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* UI Layer Overlay */
+        .ui-layer {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 2.5rem 1.5rem;
+            pointer-events: none;
+        }
+
+        .interactive-element {
+            pointer-events: auto;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-sub {
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 0.4rem 0.8rem;
+            background: rgba(10, 18, 44, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 100px;
+        }
+
+        .pulse-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #00F0FF;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #00F0FF;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+
+        /* Hero Content */
+        .hero-main {
+            text-align: center;
+            margin: auto 0;
+        }
+
+        .brand-title {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(3.2rem, 15vw, 7rem);
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            background: linear-gradient(180deg, #FFFFFF 30%, var(--text-muted) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 0.5rem;
+            user-select: none;
+        }
+
+        .hero-description {
+            font-size: clamp(0.85rem, 3.5vw, 1.1rem);
+            color: var(--text-muted);
+            max-width: 320px;
+            margin: 0 auto 2rem auto;
+            line-height: 1.5;
+            font-weight: 300;
+        }
+
+        /* Interactive Call to Action */
+        .cta-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            width: 100%;
+            max-width: 360px;
+            margin: 0 auto;
+        }
+
+        .input-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .input-box input {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            color: var(--text-white);
+            font-size: 0.9rem;
+            outline: none;
+            backdrop-filter: blur(10px);
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        .input-box input:focus {
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: var(--text-white);
+            color: var(--bg-black);
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.3s ease;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.98);
+        }
+
+        /* Footer */
+        footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+
+        .touch-hint {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.7;
+        }
+
+        /* Helper Mobile Touch Drag Hint */
+        @media (min-width: 768px) {
+            .ui-layer { padding: 3rem 4rem; }
+            .hero-description { max-width: 450px; }
+            .cta-group { flex-direction: row; }
+            .btn-submit { width: auto; padding: 1rem 2rem; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="webgl-container"></div>
+
+    <div class="ui-layer">
+        <header class="interactive-element">
+            <div class="brand-sub">MUNIN / ARCHIVE</div>
+            <div class="status-badge">
+                <span class="pulse-dot"></span>
+                <span>IN DEVELOPMENT</span>
+            </div>
+        </header>
+
+        <main class="hero-main">
+            <h1 class="brand-title">MUNIN</h1>
+            <p class="hero-description">Eksplorasi estetika dalam konstruksi visual. Pengalaman interaktif penuh akan segera hadir.</p>
+            
+            <div class="cta-group interactive-element">
+                <div class="input-box">
+                    <input type="email" placeholder="Masukkan Email Anda..." required>
+                </div>
+                <button class="btn-submit" type="button" onclick="handleSubscribe(this)">Dapatkan Akses</button>
+            </div>
+        </main>
+
+        <footer class="interactive-element">
+            <div>© 2026 MUNIN. ALL RIGHTS RESERVED.</div>
+            <div class="touch-hint">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3"/></svg>
+                <span>SERET UNTUK INTERAKSI 3D</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- THREE.JS SCENE SETUP ---
+        const container = document.getElementById('webgl-container');
+        
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x030305, 0.03);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 7;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        container.appendChild(renderer.domElement);
+
+        // --- LIGHTING SETUP ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x0A122C, 5, 20); // Deep Blue
+        pointLight1.position.set(5, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xffffff, 2, 15); // White highlight
+        pointLight2.position.set(-5, -3, 2);
+        scene.add(pointLight2);
+
+        // --- 3D FLOATING OBJECT (MONOLITH / CRYSTAL) ---
+        // Generates an abstract geometric structure symbolizing MUNIN brand core
+        const geometry = new THREE.IcosahedronGeometry(2, 0);
+        const material = new THREE.MeshPhysicalMaterial({
+            color: 0x0A122C,
+            metalness: 0.85,
+            roughness: 0.15,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1,
+            wireframe: false,
+            flatShading: true
+        });
+
+        const mainMesh = new THREE.Mesh(geometry, material);
+        scene.add(mainMesh);
+
+        // Outer Wireframe Shell
+        const wireframeGeo = new THREE.IcosahedronGeometry(2.2, 1);
+        const wireframeMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.12
+        });
+        const wireframeMesh = new THREE.Mesh(wireframeGeo, wireframeMat);
+        scene.add(wireframeMesh);
+
+        // --- PARTICLE FIELD ---
+        const particleCount = window.innerWidth < 768 ? 200 : 500;
+        const particleGeo = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+
+        for(let i = 0; i < particleCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 20;
+            positions[i+1] = (Math.random() - 0.5) * 20;
+            positions[i+2] = (Math.random() - 0.5) * 20;
+        }
+
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const particleMat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.03,
+            transparent: true,
+            opacity: 0.5
+        });
+
+        const particleSystem = new THREE.Points(particleGeo, particleMat);
+        scene.add(particleSystem);
+
+        // --- INTERACTIVITY (TOUCH & MOUSE DRAG) ---
+        let targetRotationX = 0;
+        let targetRotationY = 0;
+        let mouseX = 0;
+        let mouseY = 0;
+
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        const onPointerDown = (e) => {
+            isDragging = true;
+            previousMousePosition = {
+                x: e.touches ? e.touches[0].clientX : e.clientX,
+                y: e.touches ? e.touches[0].clientY : e.clientY
+            };
+        };
+
+        const onPointerMove = (e) => {
+            const currentX = e.touches ? e.touches[0].clientX : e.clientX;
+            const currentY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            if (isDragging) {
+                const deltaX = currentX - previousMousePosition.x;
+                const deltaY = currentY - previousMousePosition.y;
+
+                targetRotationY += deltaX * 0.008;
+                targetRotationX += deltaY * 0.008;
+
+                previousMousePosition = { x: currentX, y: currentY };
+            }
+
+            // Parallax offset computation
+            mouseX = (currentX / window.innerWidth) * 2 - 1;
+            mouseY = -(currentY / window.innerHeight) * 2 + 1;
+        };
+
+        const onPointerUp = () => { isDragging = false; };
+
+        window.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        window.addEventListener('touchstart', onPointerDown, { passive: true });
+        window.addEventListener('touchmove', onPointerMove, { passive: true });
+        window.addEventListener('touchend', onPointerUp);
+
+        // --- RESIZE HANDLER ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        });
+
+        // --- ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Auto Inertia Smooth Rotation
+            mainMesh.rotation.y += (targetRotationY - mainMesh.rotation.y) * 0.05 + 0.003;
+            mainMesh.rotation.x += (targetRotationX - mainMesh.rotation.x) * 0.05 + 0.002;
+
+            wireframeMesh.rotation.y = -mainMesh.rotation.y * 1.2;
+            wireframeMesh.rotation.x = -mainMesh.rotation.x * 1.2;
+
+            // Floating Oscillation (Levitation effect)
+            mainMesh.position.y = Math.sin(elapsedTime * 1.5) * 0.2;
+            wireframeMesh.position.y = mainMesh.position.y;
+
+            // Camera subtle parallax tracking
+            camera.position.x += (mouseX * 0.5 - camera.position.x) * 0.05;
+            camera.position.y += (mouseY * 0.5 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            // Rotate Particles
+            particleSystem.rotation.y = elapsedTime * 0.02;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // --- FORM ACTION ---
+        function handleSubscribe(btn) {
+            const input = btn.previousElementSibling.querySelector('input');
+            if(input.value && input.checkValidity()) {
+                btn.innerText = "TERDAFTAR";
+                btn.style.background = "#00F0FF";
+                btn.style.color = "#000000";
+                input.value = "";
+                input.disabled = true;
+            } else {
+                input.focus();
+            }
+        }
+    </script>
+</body>
+</html>
